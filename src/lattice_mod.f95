@@ -1,8 +1,21 @@
+module alatt_mod
+    use precision_mod, only : wp
+    implicit none
+    private
+    public
+
+    type, abstract, public :: Alattice
+    contains
+        procedure, deferred :: collide_and_stream
+    end type
+
+end module
+
 module lattice_mod
     use precision_mod, only : wp
     use cell_mod, only : LatticeCell, new_LatticeCell
 
-    implicit none   
+    implicit none
     private
 
     public Lattice
@@ -34,7 +47,7 @@ contains
 
         latt%n = n
         allocate(latt%cell(n))
-        
+
         ! do i = 1, n
            ! latt%cell(i) = LatticeCell(omega,1.0_wp,dens)
         ! end do
@@ -95,10 +108,51 @@ contains
     end subroutine
 end module
 
+module periodic_mod
+    use precision_mod
+    use lattice_mod, only: Lattice
+    ! use cell_mod, only: swap
+    implicit none
+    private
+
+    type, public, extends(Lattice) :: PeriodicLattice
+    contains
+        procedure, private :: collide_and_stream_simple
+        procedure, private :: collide_and_stream_density
+        generic :: collide_and_stream => collide_and_stream_simple, collide_and_stream_density
+    end type
+
+contains
+    subroutine collide_and_stream_simple(this)
+        class(PeriodicLattice), intent(inout) :: this
+        integer :: i
+
+        call this%cell(1)%simple_collision()
+        do i = 2, this%n
+            call this%cell(i)%simple_collision()
+            call this%cell(i)%cell_swap(this%cell(i-1))
+        end do
+        call this%cell(1)%cell_swap(this%cell(this%n)) ! periodic bc
+    end subroutine
+
+    subroutine collide_and_stream_density(this,dens)
+        class(PeriodicLattice), intent(inout) :: this
+        real(wp) :: dens(this%n)
+        integer :: i
+
+        call this%cell(1)%simple_collision(dens(1))
+        do i = 2, this%n
+            call this%cell(i)%simple_collision(dens(i))
+            call this%cell(i)%cell_swap(this%cell(i-1))
+        end do
+        call this%cell(1)%cell_swap(this%cell(this%n)) ! periodic bc
+    end subroutine
+end module
+
 program main
     use precision_mod, only : wp
     use lattice_mod, only : Lattice
-    use math_mod, only : PI
+    use math_mod, only : pi
     use io_mod
 
     integer, parameter :: n = 101
@@ -111,7 +165,8 @@ program main
 
     integer :: t
 
-    density = [(sin(2*PI*dx*real(i-1,wp))**2, i = 1, n)]
+    print *, pi
+    density = [(sin(2*pi*dx*real(i-1,wp))**2, i = 1, n)]
 
     latt = Lattice(omega,density)
 
