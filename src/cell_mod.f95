@@ -1,26 +1,54 @@
-module cell_mod
+module abstract_cell_mod
     use precision_mod, only : wp
 
     implicit none
     private
-    public LatticeCell
 
-    real(wp), parameter :: W(3) = [2.0_wp/3.0_wp, 1.0_wp/6.0_wp, 1.0_wp/6.0_wp]
-    real(wp), parameter :: C_SQR = 1.0_wp/3.0_wp
-
-    type :: LatticeCell
+    type, abstract, public :: AbstractCell
         real(wp) :: omega
         real(wp) :: one_minus_omega
         real(wp) :: pdf(3)
     contains
+        procedure(symm), deferred :: assign
+        generic :: assignment(=) => assign
+        procedure(swap), deferred :: swap_with
+    end type
+
+    abstract interface
+        elemental subroutine symm(lhs,rhs)
+            import :: AbstractCell
+            class(AbstractCell), intent(inout) :: lhs
+            class(AbstractCell), intent(in) :: rhs
+        end subroutine
+        subroutine swap(this,previous)
+            import :: AbstractCell
+            class(AbstractCell), intent(inout) :: this
+            class(AbstractCell), intent(inout) :: previous
+        end subroutine
+    end interface
+end module
+
+module cell_mod
+    use precision_mod, only : wp
+    use abstract_cell_mod, only : AbstractCell
+
+    implicit none
+    private
+    public LatticeCell, AbstractCell
+
+    real(wp), parameter :: W(3) = [2.0_wp/3.0_wp, 1.0_wp/6.0_wp, 1.0_wp/6.0_wp]
+    real(wp), parameter :: C_SQR = 1.0_wp/3.0_wp
+
+    type, extends(AbstractCell), public :: LatticeCell
+    contains
         procedure, public :: zeroth_moment
         procedure, public :: first_moment
-        procedure, public :: collide
+        procedure, public :: collide_simple
+        generic :: collide => collide_simple
         procedure, public :: diffusivity
-        procedure, public :: assign_cell
+        procedure, public :: assign => assign_cell
         procedure, public :: print
-        procedure, public :: swap_with
-        generic :: assignment(=) => assign_cell
+        procedure, public :: swap_with => swap_with_simple
     end type
 
     interface LatticeCell
@@ -31,10 +59,12 @@ contains
 
     elemental subroutine assign_cell(lhs,rhs)
         class(LatticeCell), intent(inout) :: lhs
-        class(LatticeCell), intent(in) :: rhs
-
-        lhs%omega = rhs%omega
-        lhs%pdf = rhs%pdf
+        class(AbstractCell), intent(in) :: rhs
+        select type(rhs)
+            type is (LatticeCell)
+                lhs%omega = rhs%omega
+                lhs%pdf = rhs%pdf
+        end select
     end subroutine    
 
     pure elemental function new_LatticeCell(omega,dens) result(cell)
@@ -61,7 +91,7 @@ contains
     end function
 
 
-    subroutine collide(this,dens)
+    subroutine collide_simple(this,dens)
         class(LatticeCell), intent(inout) :: this
         real(wp), intent(out), optional :: dens
 
@@ -81,11 +111,10 @@ contains
     end subroutine
 
 
-    subroutine swap_with(this,previous)
+    subroutine swap_with_simple(this,previous)
         class(LatticeCell), intent(inout) :: this
-        class(LatticeCell), intent(inout) :: previous
+        class(AbstractCell), intent(inout) :: previous
         real(wp) :: temp
-
         temp = this%pdf(2)
         this%pdf(2) = previous%pdf(3)
         previous%pdf(3) = temp

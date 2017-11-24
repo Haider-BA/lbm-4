@@ -12,11 +12,11 @@ module lattice_mod
         class(LatticeCell), allocatable :: cell(:)
     contains
         private
-        procedure, public :: print
         procedure, public :: density
         procedure :: collide_and_stream_simple
         procedure :: collide_and_stream_density
         generic, public :: collide_and_stream => collide_and_stream_simple, collide_and_stream_density
+        procedure, public :: print => print_lattice
         procedure :: assign_
         generic :: assignment(=) => assign_
         ! procedure :: density
@@ -31,9 +31,14 @@ contains
 
     subroutine assign_(this,rhs)
         class(Lattice), intent(inout) :: this
-        class(Lattice), intent(in) :: rhs
-        this%n = rhs%n
-        this%cell = rhs%cell
+        class(AbstractLattice), intent(in) :: rhs
+        select type(rhs)
+            class is (Lattice)
+                this%n = rhs%n
+                this%cell = rhs%cell
+            class default
+                print *, "unsupported lattice class"
+        end select
     end subroutine
 
     function new_Lattice(n,omega,dens) result(latt)
@@ -61,7 +66,7 @@ contains
         end do
     end function
 
-    subroutine print(this)
+    subroutine print_lattice(this)
         class(Lattice), intent(in) :: this
         integer :: i
 

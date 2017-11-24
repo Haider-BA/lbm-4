@@ -1,6 +1,6 @@
 module sman_cell_mod
     use precision_mod, only : wp
-    use cell_mod, only : LatticeCell
+    use cell_mod, only : LatticeCell, AbstractCell
 
     implicit none
     private
@@ -14,20 +14,36 @@ module sman_cell_mod
     contains
         private
         procedure, public :: first_moment
-        procedure, public :: collide
+        procedure :: collide_sman
+        generic :: collide => collide_sman
+        procedure, public :: assign => assign_sman_cell
+        procedure :: swap_with_sman
+        procedure, public :: swap_with => swap_with_sman
     end type
 
     interface SmanCell
         module procedure new_SmanCell
+        module procedure new_SmanCellComplex
     end interface
 contains
 
-    elemental subroutine assign_cell(lhs,rhs)
-        class(LatticeCell), intent(inout) :: lhs
-        class(LatticeCell), intent(in) :: rhs
-
-        lhs%omega = rhs%omega
-        lhs%pdf = rhs%pdf
+    elemental subroutine assign_sman_cell(lhs,rhs)
+        class(SmanCell), intent(inout) :: lhs
+        class(AbstractCell), intent(in) :: rhs
+        select type(rhs)
+            class is (LatticeCell)
+                lhs%omega = rhs%omega
+                lhs%one_minus_omega = rhs%one_minus_omega
+                lhs%pdf = rhs%pdf
+                lhs%c = [0.0_wp,1.0_wp,-1.0_wp]
+                lhs%length = 1.0_wp
+            class is (SmanCell)
+                lhs%omega = rhs%omega
+                lhs%one_minus_omega = rhs%one_minus_omega
+                lhs%pdf = rhs%pdf
+                lhs%c = rhs%c
+                lhs%length = rhs%length
+        end select
     end subroutine    
 
     pure function weights_(c) result(w)
@@ -59,18 +75,34 @@ contains
         cell%pdf = t*dens
     end function
 
+    pure function new_SmanCellComplex(omega,dens,length,c) result(cell)
+        real(wp), intent(in) :: omega
+        real(wp), intent(in) :: dens
+        real(wp), intent(in) :: length
+        real(wp), intent(in) :: c(3)
+        type(SmanCell) :: cell
+        real(wp) :: t(3)
+
+        cell%omega = omega
+        cell%one_minus_omega = 1.0_wp - omega
+        cell%length = length
+        cell%c = c
+        t = weights_(cell%c)
+        cell%pdf = t*dens
+    end function
+
     pure elemental function first_moment(this) result(moment)
         class(SmanCell), intent(in) :: this
         real(wp) :: moment
         moment = sum(this%c*this%pdf)
     end function
 
-    subroutine collide(this,vel,dt,dens)
+    subroutine collide_sman(this,vel,dt,dens)
         class(SmanCell), intent(inout) :: this
         real(wp), intent(in) :: vel(2)
         real(wp), intent(in) :: dt
         real(wp), intent(out), optional :: dens
-        real(wp) :: m0, m1, c2, c3, csum, t1, t2, t3
+        real(wp) :: m0, m1, t(3), c2,c3, csum
 
         ! pre-collision moments (calculated from pdf's), Eq. 13
         m0 = this%zeroth_moment()
@@ -88,12 +120,27 @@ contains
         m1 = m1*this%one_minus_omega
 
         ! new weight factors, Eq. 17, see above
-        t = weights_()
+        c2 = abs(this%c(2))
+        c3 = abs(this%c(3))
+        csum = c2 + c3
+
+        t(1) = 1.0_wp - C_SQR/(c2*c3)
+        t(2) = C_SQR/(c2*csum)
+        t(3) = C_SQR/(c3*csum)
 
         ! post-collision pdf's, Eq. 19
         this%pdf(1) = t(1)*m0
-        this%pdf(2) = t(2)*m0 + m1/csum
-        this%pdf(3) = t(3)*m0 - m1/csum
+        this%pdf(3) = t(2)*m0 + m1/csum
+        this%pdf(2) = t(3)*m0 - m1/csum
     end subroutine
 
+
+    subroutine swap_with_sman(this,previous)
+        class(SmanCell), intent(inout) :: this
+        class(AbstractCell), intent(inout) :: previous
+        real(wp) :: temp
+        temp = this%pdf(2)
+        this%pdf(2) = previous%pdf(3)
+        previous%pdf(3) = temp
+    end subroutine
 end module
