@@ -15,7 +15,7 @@ module sman_cell_mod
         private
         procedure, public :: first_moment
         procedure :: collide_sman
-        generic :: collide => collide_sman
+        generic, public :: collide => collide_sman
         procedure, public :: assign => assign_sman_cell
         procedure :: swap_with_sman
         procedure, public :: swap_with => swap_with_sman

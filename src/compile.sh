@@ -10,6 +10,7 @@ gfortran $cflags sman_cell_mod.f95
 gfortran $cflags abstract_lattice_mod.f95
 gfortran $cflags lattice_mod.f95
 gfortran $cflags periodic_lattice_mod.f95
+gfortran $cflags sman_lattice_mod.f95
 gfortran $cflags main.f95
 
 gfortran $lflags *.o -o main
