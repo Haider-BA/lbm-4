@@ -130,7 +130,7 @@ contains
 
         ! post-collision pdf's, Eq. 19
         this%pdf(1) = t(1)*m0
-        this%pdf(3) = t(2)*m0 + m1/csum
+        this%pdf(3) = t(2)*m0 + m1/csum ! NOTE: These are opposite on purpose.
         this%pdf(2) = t(3)*m0 - m1/csum
     end subroutine
 
@@ -139,8 +139,22 @@ contains
         class(SmanCell), intent(inout) :: this
         class(AbstractCell), intent(inout) :: previous
         real(wp) :: temp
-        temp = this%pdf(2)
-        this%pdf(2) = previous%pdf(3)
-        previous%pdf(3) = temp
+        real(wp) :: c2, c3, csum, A, B2, B3
+
+        select type(previous)
+            class is (SmanCell)
+                c2 = abs(previous%c(2))
+                c3 = abs(this%c(3))
+                csum = c2 + c3
+                A = (c2 - c3)/csum
+                B2 = 2.0_wp*c2/csum
+                B3 = 2.0_wp*c3/csum
+
+                temp = this%pdf(2)
+                this%pdf(2) = B2*previous%pdf(3) + A*temp
+                previous%pdf(3) = B3*temp - A*previous%pdf(3)
+            class default
+                print *, "unsupported swapping of classes"
+        end select
     end subroutine
 end module
