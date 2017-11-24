@@ -1,59 +1,67 @@
-module lattice_mod
-    use precision_mod, only : wp
-    use abstract_lattice_mod, only : AbstractLattice
+module periodic_lattice_mod
+    use precision_mod
+    use lattice_mod, only : Lattice
     use cell_mod, only : LatticeCell
 
     implicit none
     private
+    public PeriodicLattice, PeriodicLattice_
 
-    public Lattice
-
-    type, extends(AbstractLattice), public :: Lattice
-        class(LatticeCell), allocatable :: cell(:)
+    type, public, extends(Lattice) :: PeriodicLattice
     contains
         private
-        procedure, public :: print
-        procedure, public :: density
         procedure :: collide_and_stream_simple
         procedure :: collide_and_stream_density
-        generic, public :: collide_and_stream => collide_and_stream_simple, collide_and_stream_density
-        procedure :: assign_
-        generic :: assignment(=) => assign_
-        ! procedure :: density
     end type
 
-    interface Lattice
+    interface PeriodicLattice
         module procedure new_Lattice
         module procedure new_LatticeWithDensity
     end interface
 
+    interface PeriodicLattice_
+        module procedure PeriodicLattice_simple
+        module procedure PeriodicLattice_density
+    end interface
+
+
 contains
 
-    subroutine assign_(this,rhs)
-        class(Lattice), intent(inout) :: this
-        class(Lattice), intent(in) :: rhs
-        this%n = rhs%n
-        this%cell = rhs%cell
+    subroutine PeriodicLattice_simple(latt,omega,dens)
+        class(Lattice), intent(out), allocatable :: latt
+        real(wp), intent(in) :: omega
+        real(wp), intent(in) :: dens(:)
+
+        allocate(latt, source=PeriodicLattice(omega,dens))
+    end subroutine
+
+    subroutine PeriodicLattice_density(latt,n,omega,dens)
+        class(Lattice), intent(out), allocatable :: latt
+        integer, intent(in) :: n
+        real(wp), intent(in) :: omega
+        real(wp), intent(in) :: dens
+
+        allocate(latt, source=PeriodicLattice(n,omega,dens))
     end subroutine
 
     function new_Lattice(n,omega,dens) result(latt)
         integer, intent(in) :: n
         real(wp), intent(in) :: omega
         real(wp), intent(in) :: dens
-        type(Lattice) :: latt
+        type(PeriodicLattice) :: latt
 
         latt%n = n
         allocate(latt%cell(n))
-        latt%cell = LatticeCell(omega,dens)
+        latt%cell(:) = LatticeCell(omega,dens)
     end function
 
     function new_LatticeWithDensity(omega,dens) result(latt)
         real(wp), intent(in) :: omega
         real(wp) :: dens(:)
-        type(Lattice) :: latt
+        type(PeriodicLattice) :: latt
         integer :: i, n
-    
-        n = size(dens)        
+        
+        n = size(dens)
         latt%n = n
         allocate(latt%cell(n))
         do i = 1, n
@@ -61,24 +69,8 @@ contains
         end do
     end function
 
-    subroutine print(this)
-        class(Lattice), intent(in) :: this
-        integer :: i
-
-        do i = 1, this%n
-            call this%cell(i)%print
-        end do
-    end subroutine
-
-    function density(this) result(dens)
-        class(Lattice), intent(in) :: this
-        real(wp), allocatable :: dens(:)
-        dens = this%cell%zeroth_moment()
-    end function
-
-
     subroutine collide_and_stream_simple(this)
-        class(Lattice), intent(inout) :: this
+        class(PeriodicLattice), intent(inout) :: this
         integer :: i
 
         call this%cell(1)%collide()
@@ -86,10 +78,12 @@ contains
             call this%cell(i)%collide()
             call this%cell(i)%swap_with(this%cell(i-1))
         end do
+        call this%cell(1)%swap_with(this%cell(this%n)) ! periodic bc
+
     end subroutine
 
     subroutine collide_and_stream_density(this,dens)
-        class(Lattice), intent(inout) :: this
+        class(PeriodicLattice), intent(inout) :: this
         real(wp) :: dens(this%n)
         integer :: i
 
@@ -98,8 +92,7 @@ contains
             call this%cell(i)%collide(dens(i))
             call this%cell(i)%swap_with(this%cell(i-1))
         end do
+        call this%cell(1)%swap_with(this%cell(this%n)) ! periodic bc
     end subroutine
+
 end module
-
-
-
