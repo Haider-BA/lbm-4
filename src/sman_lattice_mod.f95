@@ -18,11 +18,16 @@ module sman_lattice_mod
         procedure, public :: density
         procedure :: collide_and_stream_simple
         procedure :: collide_and_stream_density
-        generic, public :: collide_and_stream => collide_and_stream_simple, collide_and_stream_density
+        ! procedure :: collide_and_stream_sman
+        ! procedure :: collide_and_stream_sman_density
+        generic, public :: collide_and_stream => collide_and_stream_simple, &
+                                                 collide_and_stream_density
         procedure, public :: print => print_lattice
         ! procedure :: assign_
         ! generic :: assignment(=) => assign_
         ! procedure :: density
+        procedure, public :: setLeftBC
+        procedure, public :: setRightBC
     end type
 
     interface SmanLattice
@@ -75,8 +80,8 @@ contains
         real(wp), intent(in), optional :: dt, A
         type(SmanLattice) :: latt
         integer :: i, n
-    
-        n = size(dens)        
+
+        n = size(dens)
         latt%n = n
         allocate(latt%cell(n))
         do i = 1, n
@@ -110,18 +115,45 @@ contains
 
     function density(this) result(dens)
         class(SmanLattice), intent(in) :: this
-        real(wp), allocatable :: dens(:)
+        real(wp) :: dens(this%n)
         integer :: i
         dens = [(this%cell(i)%zeroth_moment(),i=1,this%n)]
     end function
 
+    ! subroutine collide_and_stream_simple(this)
+    !     class(SmanLattice), intent(inout) :: this
+    !     integer :: i
+
+    !     call this%cell(1)%collide()
+    !     do i = 2, this%n
+    !         call this%cell(i)%collide()
+    !         call this%cell(i)%swap_with(this%cell(i-1))
+    !     end do
+    ! end subroutine
+
+    ! subroutine collide_and_stream_density(this,dens)
+    !     class(SmanLattice), intent(inout) :: this
+    !     real(wp) :: dens(this%n)
+    !     integer :: i
+
+    !     call this%cell(1)%collide(dens(1))
+    !     do i = 2, this%n
+    !         call this%cell(i)%collide(dens(i))
+    !         call this%cell(i)%swap_with(this%cell(i-1))
+    !     end do
+    ! end subroutine
+
     subroutine collide_and_stream_simple(this)
         class(SmanLattice), intent(inout) :: this
+        real(wp) :: vs(2), dt
         integer :: i
 
-        call this%cell(1)%collide()
+        dt = this%dt
+        vs = this%solid_velocity(1:2)
+        call this%cell(1)%collide(vs,dt)
         do i = 2, this%n
-            call this%cell(i)%collide()
+            vs = this%solid_velocity(i:i+1)
+            call this%cell(i)%collide(vs,dt)
             call this%cell(i)%swap_with(this%cell(i-1))
         end do
     end subroutine
@@ -131,10 +163,28 @@ contains
         real(wp) :: dens(this%n)
         integer :: i
 
-        call this%cell(1)%collide(dens(1))
+        associate(dt => this%dt, vs => this%solid_velocity)
+        ! vs = this%solid_velocity(1:2)
+        call this%cell(1)%collide(vs(1:2),dt,dens(1))
         do i = 2, this%n
-            call this%cell(i)%collide(dens(i))
+            ! vs = this%solid_velocity(i:i+1)
+            call this%cell(i)%collide(vs(i:i+1),dt,dens(i))
             call this%cell(i)%swap_with(this%cell(i-1))
         end do
+        end associate
+    end subroutine
+
+    subroutine setLeftBC(this,value)
+        class(SmanLattice), intent(inout) :: this
+        real(wp), intent(in) :: value
+
+        call this%cell(1)%force_west(value)
+    end subroutine
+
+    subroutine setRightBC(this,value)
+        class(SmanLattice), intent(inout) :: this
+        real(wp), intent(in) :: value
+
+        call this%cell(this%n)%force_east(value)
     end subroutine
 end module

@@ -57,8 +57,8 @@ contains
         real(wp) :: dens(:)
         type(Lattice) :: latt
         integer :: i, n
-    
-        n = size(dens)        
+
+        n = size(dens)
         latt%n = n
         allocate(latt%cell(n))
         do i = 1, n
@@ -77,7 +77,7 @@ contains
 
     function density(this) result(dens)
         class(Lattice), intent(in) :: this
-        real(wp), allocatable :: dens(:)
+        real(wp) :: dens(this%n)
         dens = this%cell%zeroth_moment()
     end function
 

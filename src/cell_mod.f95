@@ -65,7 +65,7 @@ contains
                 lhs%omega = rhs%omega
                 lhs%pdf = rhs%pdf
         end select
-    end subroutine    
+    end subroutine
 
     pure elemental function new_LatticeCell(omega,dens) result(cell)
         real(wp), intent(in) :: omega

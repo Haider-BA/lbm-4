@@ -19,6 +19,8 @@ module sman_cell_mod
         procedure, public :: assign => assign_sman_cell
         procedure :: swap_with_sman
         procedure, public :: swap_with => swap_with_sman
+        procedure, public :: force_east
+        procedure, public :: force_west
     end type
 
     interface SmanCell
@@ -44,13 +46,13 @@ contains
                 lhs%c = rhs%c
                 lhs%length = rhs%length
         end select
-    end subroutine    
+    end subroutine
 
     pure function weights_(c) result(w)
         real(wp), intent(in) :: c(3)
         real(wp) :: w(3)
         real(wp) :: c2, c3, csum
-        
+
         c2 = abs(c(2))
         c3 = abs(c(3))
         csum = c2 + c3
@@ -156,5 +158,19 @@ contains
             class default
                 print *, "unsupported swapping of classes"
         end select
+    end subroutine
+
+    subroutine force_west(this,value)
+        class(SmanCell), intent(inout) :: this
+        real(wp), intent(in) :: value
+
+        this%pdf(2) = value - this%pdf(1) - this%pdf(3)
+    end subroutine
+
+    subroutine force_east(this,value)
+        class(SmanCell), intent(inout) :: this
+        real(wp), intent(in) :: value
+
+        this%pdf(3) = value - this%pdf(1) - this%pdf(2)
     end subroutine
 end module

@@ -36,6 +36,7 @@ program main
             call savetxt("data_"//str(t),density)
         end if
         call slatt%collide_and_stream(density)
+        call slatt%setLeftBC(1.0_wp)
         if (mod(t,outstep)==0) then
             call savetxt("sdata_"//str(t),density)
         end if
