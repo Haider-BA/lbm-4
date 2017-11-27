@@ -60,7 +60,7 @@ contains
         real(wp) :: dens(:)
         type(PeriodicLattice) :: latt
         integer :: i, n
-        
+
         n = size(dens)
         latt%n = n
         allocate(latt%cell(n))
@@ -84,7 +84,7 @@ contains
 
     subroutine collide_and_stream_density(this,dens)
         class(PeriodicLattice), intent(inout) :: this
-        real(wp) :: dens(this%n)
+        real(wp), intent(out) :: dens(this%n)
         integer :: i
 
         call this%cell(1)%collide(dens(1))

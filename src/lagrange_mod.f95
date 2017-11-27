@@ -82,7 +82,7 @@ contains
             end do
         end function
 
-        function new_LagrangePolynomial(x,y) result(p)
+        pure function new_LagrangePolynomial(x,y) result(p)
             real(wp), intent(in) :: x(:),y(:)
             type(LagrangePolynomial) :: p
             integer :: n
@@ -96,7 +96,7 @@ contains
             p%y = y
         end function
 
-        function new_LagrangePolynomial_safe(n,x,y) result(p)
+        pure function new_LagrangePolynomial_safe(n,x,y) result(p)
             integer, intent(in) :: n
             real(wp), intent(in) :: x(n),y(n)
             type(LagrangePolynomial) :: p

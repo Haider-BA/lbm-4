@@ -11,6 +11,7 @@ module io_mod
     interface savetxt
         module procedure savetxt_simple
         module procedure savetxt_with_step
+        module procedure savetxt_array
     end interface
 
 contains
@@ -38,7 +39,7 @@ contains
     subroutine savetxt_with_step(fname,data,dx)
         character(len=*), intent(in) :: fname
         real(wp), intent(in) :: data(:)
-        real(wp), intent(in), optional :: dx 
+        real(wp), intent(in), optional :: dx
         real(wp) :: dx_
         integer :: i, unit
 
@@ -50,6 +51,18 @@ contains
             write(unit,*) real(i-1,wp)*dx_, data(i)
         end do
         close(unit)
+    end subroutine
+
+    subroutine savetxt_array(fname,data)
+        character(len=*), intent(in) :: fname
+        real(wp), intent(in) :: data(:,:)
+
+        integer :: i, unit
+
+        open(newunit=unit,file=fname//".out")
+        do i = 1, size(data,dim=1)
+            write(unit,*) data(i,:)
+        end do
     end subroutine
 
 end module

@@ -95,7 +95,7 @@ contains
 
     subroutine collide_and_stream_density(this,dens)
         class(Lattice), intent(inout) :: this
-        real(wp) :: dens(this%n)
+        real(wp), intent(out) :: dens(this%n)
         integer :: i
 
         call this%cell(1)%collide(dens(1))

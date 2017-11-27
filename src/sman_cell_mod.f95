@@ -8,7 +8,6 @@ module sman_cell_mod
     real(wp) :: C_SQR = 1.0_wp/3.0_wp
 
     type, extends(LatticeCell), public :: SmanCell
-        private
         real(wp) :: c(3)
         real(wp) :: length
     contains

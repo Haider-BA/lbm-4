@@ -21,7 +21,7 @@ module abstract_lattice_mod
         subroutine int2(this,dens)
             import :: AbstractLattice, wp
             class(AbstractLattice), intent(inout) :: this
-            real(wp) :: dens(this%n)
+            real(wp), intent(out) :: dens(this%n)
         end subroutine
         function dens_interface(this) result(dens)
             import :: AbstractLattice, wp

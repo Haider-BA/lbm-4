@@ -5,18 +5,18 @@ module rootfinder_mod
     implicit none
 
     private
-    public UserFunction, secant
+    public user_function, simple_function, secant, newton
 
-    type, abstract, public :: UserFunction
+    type, abstract, public :: user_function
     contains
         procedure(function_evaluation), deferred, pass(params) :: eval
     end type
 
     abstract interface
         function function_evaluation(x,params) result(fx)
-            import :: UserFunction, wp
-            real(wp), intent(in) :: x
-            class(UserFunction), intent(in) :: params
+            import :: newton_function, wp
+            real(wp) :: x
+            class(user_function) :: params
             real(wp) :: fx
         end function
     end interface
@@ -25,34 +25,32 @@ module rootfinder_mod
         pure function simple_function(x)
             use precision_mod, only: wp
             real(wp), intent(in) :: x
-            real(wp) :: simple_function
+            real(wp) :: newton_func
         end function
     end interface
 
 contains
 
     function secant(f,x0,tol,max_iter) result(p)
-        class(UserFunction), intent(in) :: f
+        class(user_function), intent(in) :: f
         real(wp), intent(in) :: x0
         real(wp), intent(in), optional :: tol
         integer, intent(in), optional :: max_iter
 
         real(wp) :: tol_
-        integer :: max_iter_, i
+        integer :: max_iter_
 
         real(wp) :: p0, p1, q0, q1, p
 
-        p = 0.0_wp
-
         ! set tolerance and maximum number of iterations
-        tol_ = 1.0e-9_wp
+        tol_ = 1.0e-7_wp
         if (present(tol)) tol_ = tol
         max_iter_ = 100
         if (present(max_iter)) max_iter_ = max_iter
 
         ! print warning
         if (tol_ <= tiny(1.0_wp)) print *, "[secant] Tolerance is too small (",tol," <= 0)."
-        if (max_iter_ < 1) print *, "[secant] 'max_iter' must be greater than 0."
+        if (maxiter_ < 1) print *, "[secant] 'max_iter' must be greater than 0."
 
         ! secant method
         p0 = x0
@@ -65,7 +63,7 @@ contains
         q0 = f%eval(p0)
         q1 = f%eval(p1)
 
-        do i = 1, max_iter_
+        do i = 1, maxiter_
             if (q1 == q0) then
                 if (p1 /= p0) then
                     print *, "[secant] Tolerance of ", p1 - p0," reached."
@@ -81,8 +79,6 @@ contains
             p1 = p
             q1 = f%eval(p1)
         end do
-
-
     end function
 
     function newton(f,x0,fprime,tol,maxiter,fprime2) result(p)
