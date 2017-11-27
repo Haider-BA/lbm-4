@@ -164,13 +164,29 @@ contains
         integer :: i
 
         associate(dt => this%dt, vs => this%solid_velocity)
-        ! vs = this%solid_velocity(1:2)
+
         call this%cell(1)%collide(vs(1:2),dt,dens(1))
         do i = 2, this%n
-            ! vs = this%solid_velocity(i:i+1)
             call this%cell(i)%collide(vs(i:i+1),dt,dens(i))
             call this%cell(i)%swap_with(this%cell(i-1))
         end do
+
+        end associate
+    end subroutine
+
+    subroutine collide_and_stream_density_with_bc(this,dens,left,right)
+        class(SmanLattice), intent(inout) :: this
+        real(wp) :: dens(this%n)
+        integer :: i
+
+        associate(dt => this%dt, vs => this%solid_velocity)
+
+        call this%cell(1)%collide(vs(1:2),dt,dens(1))
+        do i = 2, this%n
+            call this%cell(i)%collide(vs(i:i+1),dt,dens(i))
+            call this%cell(i)%swap_with(this%cell(i-1))
+        end do
+
         end associate
     end subroutine
 
