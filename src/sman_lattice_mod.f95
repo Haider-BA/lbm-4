@@ -2,7 +2,7 @@ module sman_lattice_mod
     use precision_mod, only : wp
     use abstract_lattice_mod, only : AbstractLattice
     use sman_cell_mod, only : SmanCell
-
+    use rootfinder_mod, only : user_function, secant
     implicit none
     private
 
@@ -13,6 +13,8 @@ module sman_lattice_mod
         real(wp) :: area
         class(SmanCell), allocatable :: cell(:)
         real(wp), allocatable :: solid_velocity(:)
+        real(wp) :: left
+        real(wp) :: right
     contains
         private
         procedure, public :: density
@@ -35,7 +37,26 @@ module sman_lattice_mod
         module procedure new_SmanLatticeWithDensity
     end interface
 
+
+    type, extends(user_function) :: BoundaryCondition
+        real(wp) :: flux
+        real(wp) :: cwall
+        real(wp) :: D
+    contains
+        procedure, pass(params) :: eval => evaluate_bc
+    end type
 contains
+
+    pure function evaluate_bc(x,params) result(fx)
+        real(wp), intent(in) :: x
+        class(BoundaryCondition) :: params
+        type(LagrangePolynomial) :: p
+
+
+        p = LagrangePolynomial(n,grid,conc)
+
+
+    end function
 
     ! subroutine assign_(this,rhs)
     !     class(Lattice), intent(inout) :: this
@@ -163,7 +184,7 @@ contains
         real(wp) :: dens(this%n)
         integer :: i
 
-        associate(dt => this%dt, vs => this%solid_velocity)
+        associate(dt => this%dt, vs => this%solid_velocity, cell => this%cell)
 
         call this%cell(1)%collide(vs(1:2),dt,dens(1))
         do i = 2, this%n
@@ -189,6 +210,8 @@ contains
 
         end associate
     end subroutine
+
+    function left_dirichlet(this%)
 
     subroutine setLeftBC(this,value)
         class(SmanLattice), intent(inout) :: this

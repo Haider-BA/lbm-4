@@ -110,26 +110,26 @@ contains
 end module
 
 
-program interpolate
-    use precision_mod, only : wp
-    use lagrange_mod, only : LagrangePolynomial, linspace
-    use math_mod, only : pi
-    implicit none
+! program interpolate
+!     use precision_mod, only : wp
+!     use lagrange_mod, only : LagrangePolynomial, linspace
+!     use math_mod, only : pi
+!     implicit none
 
-    integer, parameter :: n = 5
-
-
-    real(wp), allocatable :: x(:), y(:)
-    type(LagrangePolynomial) :: p
-    integer :: i
+!     integer, parameter :: n = 5
 
 
-    x = linspace(0.0_wp,1.0_wp,n)
-    y = x**2 + 3.0_wp*x + 1.0_wp
+!     real(wp), allocatable :: x(:), y(:)
+!     type(LagrangePolynomial) :: p
+!     integer :: i
 
-    p = LagrangePolynomial(n,x,y)
 
-    do i = 1, n
-        print *, x(i), y(i), 2.0_wp*x(i)+3.0_wp, p%d_dx(x(i))
-    end do
-end program
+!     x = linspace(0.0_wp,1.0_wp,n)
+!     y = x**2 + 3.0_wp*x + 1.0_wp
+
+!     p = LagrangePolynomial(n,x,y)
+
+!     do i = 1, n
+!         print *, x(i), y(i), 2.0_wp*x(i)+3.0_wp, p%d_dx(x(i))
+!     end do
+! end program
